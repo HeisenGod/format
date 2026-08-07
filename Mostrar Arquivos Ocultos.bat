@@ -9,9 +9,6 @@ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" ^
 /d 1 ^
 /f
 
-taskkill /f /im explorer.exe >nul 2>&1
-start explorer.exe
-
 echo.
 echo Arquivos ocultos ativados com sucesso!
 pause
