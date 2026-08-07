@@ -9,9 +9,6 @@ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" ^
 /d 0 ^
 /f
 
-taskkill /f /im explorer.exe >nul 2>&1
-start explorer.exe
-
 echo.
 echo Extensões de arquivos ativadas com sucesso!
 pause
