@@ -5,7 +5,7 @@ color 0A
 
 echo.
 echo ================================================
-echo      REGISTRAR MAGNET - FREE DOWNLOAD MANAGER
+echo     REGISTRAR MAGNET - FREE DOWNLOAD MANAGER
 echo ================================================
 echo.
 
@@ -82,11 +82,15 @@ if not defined FDM_DIR (
 )
 
 :: ==================================================
-:: CORRECAO: Remove barra invertida (\) no final, se houver
+:: Remove barra invertida no final, se houver
 :: ==================================================
+
 if "%FDM_DIR:~-1%"=="\" set "FDM_DIR=%FDM_DIR:~0,-1%"
 
+:: ==================================================
 :: Verifica se o diretorio informado existe
+:: ==================================================
+
 if not exist "%FDM_DIR%\" (
     echo.
     echo [ERRO] O diretorio informado nao existe:
@@ -96,7 +100,10 @@ if not exist "%FDM_DIR%\" (
     goto :NOT_FOUND
 )
 
+:: ==================================================
 :: Procura o executavel dentro do diretorio informado
+:: ==================================================
+
 if exist "%FDM_DIR%\fdm.exe" (
     set "FDM_EXE=%FDM_DIR%\fdm.exe"
     goto :FOUND
@@ -143,34 +150,64 @@ reg add "HKCU\Software\Classes\Magnet" /f >nul
 
 if errorlevel 1 (
     echo [ERRO] Nao foi possivel criar a chave Magnet.
+    echo.
     pause
     exit /b 1
 )
 
+:: ==================================================
 :: Nome padrao
+:: ==================================================
+
 reg add "HKCU\Software\Classes\Magnet" ^
     /ve ^
     /t REG_SZ ^
     /d "Magnet URL" ^
     /f >nul
 
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel definir o nome do protocolo.
+    echo.
+    pause
+    exit /b 1
+)
+
+:: ==================================================
 :: Content Type
+:: ==================================================
+
 reg add "HKCU\Software\Classes\Magnet" ^
     /v "Content Type" ^
     /t REG_SZ ^
     /d "application/x-magnet" ^
     /f >nul
 
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel definir o Content Type.
+    echo.
+    pause
+    exit /b 1
+)
+
+:: ==================================================
 :: URL Protocol
+:: ==================================================
+
 reg add "HKCU\Software\Classes\Magnet" ^
     /v "URL Protocol" ^
     /t REG_SZ ^
     /d "" ^
     /f >nul
 
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel definir o URL Protocol.
+    echo.
+    pause
+    exit /b 1
+)
 
 :: ==================================================
-:: CORRECAO: DefaultIcon formatado adequadamente
+:: DefaultIcon
 :: ==================================================
 
 reg add "HKCU\Software\Classes\Magnet\DefaultIcon" ^
@@ -179,9 +216,15 @@ reg add "HKCU\Software\Classes\Magnet\DefaultIcon" ^
     /d "\"%FDM_EXE%\",0" ^
     /f >nul
 
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel configurar o icone.
+    echo.
+    pause
+    exit /b 1
+)
 
 :: ==================================================
-:: CORRECAO: Comando direto (chaves intermediarias auto-criadas)
+:: Comando do Magnet
 :: ==================================================
 
 reg add "HKCU\Software\Classes\Magnet\shell\open\command" ^
@@ -198,30 +241,89 @@ if errorlevel 1 (
     exit /b 1
 )
 
-
 :: ==================================================
-:: Conclusao
+:: 3/3 - Verificacao REAL do registro
 :: ==================================================
 
 echo.
 echo [3/3] Verificando registro...
 echo.
 
-reg query "HKCU\Software\Classes\Magnet\shell\open\command" /ve >nul 2>&1
+set "REGISTERED_COMMAND="
 
-if errorlevel 1 (
-    echo [ERRO] O registro nao foi criado corretamente.
+for /f "tokens=2,*" %%A in (
+    'reg query "HKCU\Software\Classes\Magnet\shell\open\command" /ve 2^>nul'
+) do (
+    if "%%A"=="REG_SZ" set "REGISTERED_COMMAND=%%B"
+)
+
+if not defined REGISTERED_COMMAND (
+    echo [ERRO] O comando nao foi encontrado no registro.
     echo.
     pause
     exit /b 1
 )
 
+:: ==================================================
+:: Comando esperado (CORRIGIDO)
+:: ==================================================
+
+:: Removemos as barras invertidas, que não sao necessarias no comando 'set'
+set "EXPECTED_COMMAND="%FDM_EXE%" "%%1""
+
+:: ==================================================
+:: Remocao de aspas para comparacao segura (CORRIGIDO)
+:: ==================================================
+
+:: Compara as strings sem aspas para evitar erros de sintaxe no IF do Batch
+set "CHK_REG=%REGISTERED_COMMAND:"=%"
+set "CHK_EXP=%EXPECTED_COMMAND:"=%"
+
+if /I not "%CHK_REG%"=="%CHK_EXP%" (
+    echo [ERRO] O comando registrado nao corresponde ao FDM encontrado.
+    echo.
+    echo Comando esperado:
+    echo %EXPECTED_COMMAND%
+    echo.
+    echo Comando encontrado:
+    echo %REGISTERED_COMMAND%
+    echo.
+    pause
+    exit /b 1
+)
+
+:: ==================================================
+:: Verificacao do DefaultIcon
+:: ==================================================
+
+set "REGISTERED_ICON="
+
+for /f "tokens=2,*" %%A in (
+    'reg query "HKCU\Software\Classes\Magnet\DefaultIcon" /ve 2^>nul'
+) do (
+    if "%%A"=="REG_SZ" set "REGISTERED_ICON=%%B"
+)
+
+if not defined REGISTERED_ICON (
+    echo [ERRO] O DefaultIcon nao foi encontrado no registro.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
 echo ================================================
 echo       MAGNET REGISTRADO COM SUCESSO!
 echo ================================================
 echo.
 echo FDM:
 echo "%FDM_EXE%"
+echo.
+echo Comando registrado:
+echo %REGISTERED_COMMAND%
+echo.
+echo Icone registrado:
+echo %REGISTERED_ICON%
 echo.
 echo Protocolo:
 echo magnet://
