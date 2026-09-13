@@ -18,6 +18,11 @@ echo.
 :: 1. Procurar em locais conhecidos
 :: ==================================================
 
+if exist "%LOCALAPPDATA%\Programs\Softdeluxe\Free Download Manager\fdm.exe" (
+    set "FDM_EXE=%LOCALAPPDATA%\Programs\Softdeluxe\Free Download Manager\fdm.exe"
+    goto :FOUND
+)
+
 if exist "%LOCALAPPDATA%\Softdeluxe\Free Download Manager\fdm.exe" (
     set "FDM_EXE=%LOCALAPPDATA%\Softdeluxe\Free Download Manager\fdm.exe"
     goto :FOUND
